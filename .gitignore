@@ -4,3 +4,4 @@ go-blog
 data/
 .vscode/
 .idea/
+bin/

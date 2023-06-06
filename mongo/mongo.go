@@ -56,6 +56,7 @@ func (cl *MongoClient[T]) Insert(data *T) {
 	}
 	fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
 }
+
 func (cl *MongoClient[T]) FindAll() []T {
 	cl.mongo.Database("test").CreateCollection(context.TODO(), "books")
 	collection := cl.mongo.Database("test").Collection("books")

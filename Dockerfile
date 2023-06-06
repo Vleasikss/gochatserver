@@ -12,12 +12,10 @@ COPY go.sum .
 RUN go mod download
 
 COPY . .
-COPY ./static/index.html ./
-COPY ./static/main.js ./
-COPY ./static/styles.css ./
+
 
 # Build the Go app
-RUN go build -o ./out/go-sample-app socket/gin_melody/main.go
+RUN go build -o ./out/go-sample-app main.go
 
 # This container exposes port 8080 to the outside world
 EXPOSE 5002

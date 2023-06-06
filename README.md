@@ -1,3 +1,11 @@
-# Go Blog
+#### Run the following to run the project locally:
+```
+make build
+make run
+```
 
-This is the source code for my series at [HashNode](https://samzhangjy.hashnode.dev/learning-go-web-development-from-zero).
+#### Run the following to run the project locally using Docker, docker-compose:
+```
+docker-compose build
+docker-compose up
+```
