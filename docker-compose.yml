@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+
+  # App Service
+  goservice:
+    # Configuration for building the docker image for the service
+    build:
+      context: . # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5002" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    restart: unless-stopped
+    depends_on: 
+      - mongodb # This service depends on mongodb. Start that first.
+    environment:
+      - VIRTUAL_HOST=Bieliaievs-MacBook-Pro.local
+      - LETSENCRYPT_HOST=Bieliaievs-MacBook-Pro.local
+
+  # Mongodb Service   
+  mongodb:
+    container_name: mongodb
+    image: mongo
+    restart: unless-stopped
+    ports:
+      - target: 27017
+        published: 27017
+        protocol: tcp
+        mode: host
+    volumes:
+      - ./data:/data/db
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - "goservice"

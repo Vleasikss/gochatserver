@@ -1,0 +1,6 @@
+tmp/
+*.db
+go-blog
+data/
+.vscode/
+.idea/
