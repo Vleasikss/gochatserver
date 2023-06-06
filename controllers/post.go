@@ -1,93 +1,46 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
-	"samzhangjy/go-blog/models"
 
+	"samzhangjy/go-blog/mongo"
+	
 	"github.com/gin-gonic/gin"
+	"gopkg.in/olahol/melody.v1"
 )
 
-func CreatePost(c *gin.Context) {
-	var input CreatePostInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	post := models.Post{Title: input.Title, Content: input.Content}
-	models.DB.Create(&post)
-
-	c.JSON(http.StatusOK, gin.H{"data": post})
+type MessageController struct {
+	MongoClient *mongo.MongoClient[Message]
+	Melody      *melody.Melody
 }
 
-func FindPosts(c *gin.Context) {
-	var posts []models.Post
-	models.DB.Find(&posts)
+func NewMessageController(mongo *mongo.MongoClient[Message], m *melody.Melody) *MessageController {
 
-	c.JSON(http.StatusOK, gin.H{"data": posts})
-}
-
-func FindPost(c *gin.Context) {
-	var post models.Post
-
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&post).Error; err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": post})
-}
-
-func UpdatePost(c *gin.Context) {
-	var post models.Post
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&post).Error; err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "record not found"})
-		return
-	}
-
-	var input UpdatePostInput
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	updatedPost := models.Post{Title: input.Title, Content: input.Content}
-
-	models.DB.Model(&post).Updates(&updatedPost)
-	c.JSON(http.StatusOK, gin.H{"data": post})
-}
-
-func CreateAllPosts(c *gin.Context) {
-
-	var input CreateAllPostsInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var outputData []models.Post
-
-	for _, v := range input.Posts {
-		updatedPost := models.Post{
-			Title:   v.Title,
-			Content: v.Content,
+	m.HandleMessage(func(s *melody.Session, msg []byte) {
+		var input Message
+		err := json.Unmarshal(msg, &input)
+		if err != nil {
+			fmt.Println("error during JSON parsing: " + err.Error())
 		}
-		outputData = append(outputData, updatedPost)
-	}
-	
-	models.DB.CreateInBatches(&outputData, len(outputData))
+		fmt.Printf("Inserting message: from=%s, payload=%s", input.From, input.Payload)
+		go mongo.Insert(&input)
+		go m.Broadcast(msg)
+	})
 
-	c.JSON(http.StatusOK, gin.H{"data": outputData})
+	return &MessageController{
+		MongoClient: mongo,
+		Melody:      m,
+	}
 }
 
-func DeletePost(c *gin.Context) {
-	var post models.Post
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&post).Error; err != nil {
-		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "record not found"})
-		return
-	}
+func (mc *MessageController) FindMessageHistory(c *gin.Context) {
+	fmt.Println("GET request to get the history. Started...")
+	results := mc.MongoClient.FindAll()
+	c.JSON(http.StatusOK, gin.H{"data": results})
+}
 
-	models.DB.Delete(&post)
-	c.JSON(http.StatusOK, gin.H{"data": "success"})
+func (mc *MessageController) HandleSocketMessage(c *gin.Context) {
+	mc.Melody.HandleRequest(c.Writer, c.Request)
 }
