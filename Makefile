@@ -1,8 +1,8 @@
 build:
-	@go build -o bin/out
+	docker-compose build
 
-run: build
-	./bin/out
-
+run:
+	docker-compose up
+	
 test:
 	go test -v ./...

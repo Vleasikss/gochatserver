@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"time"
 
 	"github.com/Vleasikss/gochatserver/controllers"
@@ -14,6 +15,7 @@ import (
 )
 
 func main() {
+	port := os.Getenv("port")
 	r := gin.Default()
 	mongo := mongo.NewMongoClient[models.Message]()
 	melody := melody.New()
@@ -21,7 +23,7 @@ func main() {
 	controller := controllers.NewMessageController(mongo, melody)
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5002"},
+		AllowOrigins:     []string{"http://localhost", "http://localhost:" + port},
 		AllowMethods:     []string{"PUT", "PATCH", "GET"},
 		AllowHeaders:     []string{"Origin"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -33,8 +35,8 @@ func main() {
 	}))
 
 	r.Use(static.Serve("/", static.LocalFile("./public", true)))
-	r.GET("/ws", controller.HandleSocketMessage)
-	r.GET("/history", controller.FindMessageHistory)
+	r.GET("/api/ws", controller.HandleSocketMessage)
+	r.GET("/api/history", controller.FindMessageHistory)
 
-	r.Run(":5002")
+	r.Run(":" + port)
 }

@@ -17,8 +17,5 @@ COPY . .
 # Build the Go app
 RUN go build -o ./out/go-sample-app main.go
 
-# This container exposes port 8080 to the outside world
-EXPOSE 5002
-
 # Run the binary program produced by `go install`
 CMD ["./out/go-sample-app"]

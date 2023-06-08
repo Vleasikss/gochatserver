@@ -3,7 +3,7 @@ version: '3'
 services:
 
   # App Service
-  goservice:
+  goservice1:
     # Configuration for building the docker image for the service
     build:
       context: . # Use an image built from the specified dockerfile in the current directory.
@@ -11,11 +11,36 @@ services:
     ports:
       - "5002:5002" # Forward the exposed port 8080 on the container to port 8080 on the host machine
     restart: unless-stopped
+    environment:
+      - port=5002
     depends_on: 
       - mongodb # This service depends on mongodb. Start that first.
+
+  goservice2:
+    # Configuration for building the docker image for the service
+    build:
+      context: . # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    ports:
+      - "5003:5003" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    restart: unless-stopped
     environment:
-      - VIRTUAL_HOST=Bieliaievs-MacBook-Pro.local
-      - LETSENCRYPT_HOST=Bieliaievs-MacBook-Pro.local
+      - port=5003
+    depends_on: 
+      - mongodb # This service depends on mongodb. Start that first.
+
+  goservice3:
+    # Configuration for building the docker image for the service
+    build:
+      context: . # Use an image built from the specified dockerfile in the current directory.
+      dockerfile: Dockerfile
+    ports:
+      - "5004:5004" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+    restart: unless-stopped
+    environment:
+      - port=5004
+    depends_on: 
+      - mongodb # This service depends on mongodb. Start that first.
 
   # Mongodb Service   
   mongodb:
@@ -30,10 +55,12 @@ services:
     volumes:
       - ./data:/data/db
   nginx:
-    build: 
-      context: ./nginx
+    build:
+      context: ../gochatui/
       dockerfile: Dockerfile
     ports:
       - "80:80"
     depends_on:
-      - "goservice"
+      - "goservice1"
+      - "goservice2"
+      - "goservice3"
