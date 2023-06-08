@@ -73,6 +73,10 @@ func (cl *MongoClient[T]) FindAll() []T {
 	return res
 }
 
+func (cl *MongoClient[T]) GetClient() mongo.Client {
+	return *cl.mongo
+}
+
 func (cl MongoClient[T]) Disconnect(data *T) {
 	if err := cl.mongo.Disconnect(context.TODO()); err != nil {
 		fmt.Println("Unable to disconnect: " + err.Error())

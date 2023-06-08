@@ -1,14 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"github.com/Vleasikss/gochatserver/controllers"
+	"github.com/Vleasikss/gochatserver/jwt"
+	"github.com/Vleasikss/gochatserver/models"
+	"github.com/Vleasikss/gochatserver/mongo"
+	"github.com/gin-contrib/cors"
 	"os"
 	"time"
 
-	"github.com/Vleasikss/gochatserver/controllers"
-	"github.com/Vleasikss/gochatserver/models"
-	"github.com/Vleasikss/gochatserver/mongo"
-
-	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/olahol/melody.v1"
@@ -17,12 +18,35 @@ import (
 func main() {
 	port := os.Getenv("port")
 	r := gin.Default()
-	mongo := mongo.NewMongoClient[models.Message]()
+	models.ConnectDataBase()
+	mongoClient := mongo.NewMongoClient[models.Message]()
 	melody := melody.New()
 
-	controller := controllers.NewMessageController(mongo, melody)
+	controller := controllers.NewMessageController(mongoClient, melody)
 
-	r.Use(cors.New(cors.Config{
+	r.Use(corsRules(port))
+	r.Use(static.Serve("/", static.LocalFile("./public", true)))
+
+	public := r.Group("/api")
+	public.POST("/register", controllers.Authenticate)
+	public.POST("/login", controllers.Login)
+
+	protected := r.Group("/api")
+	protected.Use(jwt.AuthMiddleware())
+	protected.GET("/ws", controller.HandleSocketMessage)
+	protected.GET("/history", controller.FindMessageHistory)
+
+	private := protected.Group("/admin")
+	private.GET("/user", controllers.CurrentUser)
+
+	err := r.Run(":" + port)
+	if err != nil {
+		fmt.Println("unexpected error during running application: " + err.Error())
+	}
+}
+
+func corsRules(port string) gin.HandlerFunc {
+	return cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost", "http://localhost:" + port},
 		AllowMethods:     []string{"PUT", "PATCH", "GET"},
 		AllowHeaders:     []string{"Origin"},
@@ -32,11 +56,5 @@ func main() {
 			return true
 		},
 		MaxAge: 12 * time.Hour,
-	}))
-
-	r.Use(static.Serve("/", static.LocalFile("./public", true)))
-	r.GET("/api/ws", controller.HandleSocketMessage)
-	r.GET("/api/history", controller.FindMessageHistory)
-
-	r.Run(":" + port)
+	})
 }

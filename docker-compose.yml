@@ -13,8 +13,12 @@ services:
     restart: unless-stopped
     environment:
       - port=5002
+      - HOST_IP_ADDRESS=192.168.1.6
+      - API_SECRET=yoursecretstring
+      - TOKEN_HOUR_LIFESPAN=1
     depends_on: 
-      - mongodb # This service depends on mongodb. Start that first.
+      - mongodb
+      - mysqldb
 
 
   # Mongodb Service   
@@ -29,10 +33,26 @@ services:
         mode: host
     volumes:
       - ./data:/data/db
+  mysqldb:
+    image: mysql
+    container_name: mysqldb
+    restart: always
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      timeout: 5s
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: gochat
+      MYSQL_ROOT_PASSWORD: root
+
   nginx:
     build:
       context: ../gochatui/
       dockerfile: Dockerfile
+      args:
+        - REACT_APP_HOST_IP_ADDRESS=192.168.1.6
     ports:
       - "80:80"
     depends_on:
