@@ -42,6 +42,15 @@ func (mc *MessageController) FindMessageHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": results})
 }
 
+func (mc *MessageController) FindAllUsers(c *gin.Context) {
+	results, err := models.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": results})
+}
+
 func (mc *MessageController) HandleSocketMessage(c *gin.Context) {
 	mc.Melody.HandleRequest(c.Writer, c.Request)
 }

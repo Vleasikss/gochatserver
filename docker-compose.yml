@@ -14,7 +14,7 @@ services:
     environment:
       - port=5002
       - HOST_IP_ADDRESS=192.168.1.6
-      - API_SECRET=yoursecretstring
+      - API_SECRET=secret
       - TOKEN_HOUR_LIFESPAN=1
     depends_on: 
       - mongodb
@@ -46,7 +46,22 @@ services:
       MYSQL_PASSWORD: root
       MYSQL_DATABASE: gochat
       MYSQL_ROOT_PASSWORD: root
-
+  grafana-monitor:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      - TERM=linux
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-polystat-panel
+    ports:
+      - '3000:3000'
+    depends_on:
+      - mysqldb
+      - mongodb
+      - goservice1
+      - nginx
+    volumes:
+      - 'grafana_storage:/var/lib/grafana'
   nginx:
     build:
       context: ../gochatui/
@@ -57,3 +72,6 @@ services:
       - "80:80"
     depends_on:
       - "goservice1"
+
+volumes:
+  grafana_storage: {}

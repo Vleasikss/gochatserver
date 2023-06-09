@@ -20,9 +20,9 @@ func main() {
 	r := gin.Default()
 	models.ConnectDataBase()
 	mongoClient := mongo.NewMongoClient[models.Message]()
-	melody := melody.New()
+	melodyClient := melody.New()
 
-	controller := controllers.NewMessageController(mongoClient, melody)
+	controller := controllers.NewMessageController(mongoClient, melodyClient)
 
 	r.Use(corsRules(port))
 	r.Use(static.Serve("/", static.LocalFile("./public", true)))
@@ -30,11 +30,12 @@ func main() {
 	public := r.Group("/api")
 	public.POST("/register", controllers.Authenticate)
 	public.POST("/login", controllers.Login)
+	public.GET("/ws", controller.HandleSocketMessage)
 
 	protected := r.Group("/api")
 	protected.Use(jwt.AuthMiddleware())
-	protected.GET("/ws", controller.HandleSocketMessage)
 	protected.GET("/history", controller.FindMessageHistory)
+	protected.GET("/users", controller.FindAllUsers)
 
 	private := protected.Group("/admin")
 	private.GET("/user", controllers.CurrentUser)
@@ -47,9 +48,9 @@ func main() {
 
 func corsRules(port string) gin.HandlerFunc {
 	return cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost", "http://localhost:" + port},
-		AllowMethods:     []string{"PUT", "PATCH", "GET"},
-		AllowHeaders:     []string{"Origin"},
+		AllowOrigins:     []string{"http://localhost", "http://localhost:" + port, "http://localhost:3000"},
+		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST"},
+		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
