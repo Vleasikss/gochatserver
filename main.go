@@ -19,10 +19,11 @@ func main() {
 	port := os.Getenv("port")
 	r := gin.Default()
 	models.ConnectDataBase()
-	mongoClient := mongo.NewMongoClient[models.Message]()
+	mongoClient := mongo.NewMongoClient()
 	melodyClient := melody.New()
 
-	controller := controllers.NewMessageController(mongoClient, melodyClient)
+	mc := controllers.NewMessageController(mongoClient, melodyClient)
+	cc := controllers.NewChatController(mongoClient)
 
 	r.Use(corsRules(port))
 	r.Use(static.Serve("/", static.LocalFile("./public", true)))
@@ -30,12 +31,14 @@ func main() {
 	public := r.Group("/api")
 	public.POST("/register", controllers.Authenticate)
 	public.POST("/login", controllers.Login)
-	public.GET("/ws", controller.HandleSocketMessage)
+	public.GET("/ws", mc.HandleSocketMessage)
 
 	protected := r.Group("/api")
 	protected.Use(jwt.AuthMiddleware())
-	protected.GET("/history", controller.FindMessageHistory)
-	protected.GET("/users", controller.FindAllUsers)
+	protected.GET("/history/:chatId", mc.FindMessageHistory)
+	protected.GET("/users", mc.FindAllUsers)
+	protected.POST("/chat", cc.PostChat)
+	protected.GET("/chat", cc.FindAllUserChats)
 
 	private := protected.Group("/admin")
 	private.GET("/user", controllers.CurrentUser)

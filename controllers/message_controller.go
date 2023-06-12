@@ -13,11 +13,11 @@ import (
 )
 
 type MessageController struct {
-	MongoClient *mongo.MongoClient[models.Message]
+	MongoClient *mongo.MongoClient
 	Melody      *melody.Melody
 }
 
-func NewMessageController(mongo *mongo.MongoClient[models.Message], m *melody.Melody) *MessageController {
+func NewMessageController(mongo *mongo.MongoClient, m *melody.Melody) *MessageController {
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		var input models.Message
@@ -26,7 +26,7 @@ func NewMessageController(mongo *mongo.MongoClient[models.Message], m *melody.Me
 			fmt.Println("error during JSON parsing: " + err.Error())
 		}
 		fmt.Printf("Inserting message: from=%s, payload=%s", input.From, input.Payload)
-		go mongo.Insert(&input)
+		go mongo.InsertMessage(&input)
 		go m.Broadcast(msg)
 	})
 
@@ -37,8 +37,14 @@ func NewMessageController(mongo *mongo.MongoClient[models.Message], m *melody.Me
 }
 
 func (mc *MessageController) FindMessageHistory(c *gin.Context) {
-	fmt.Println("GET request to get the history. Started...")
-	results := mc.MongoClient.FindAll()
+	chatId := c.Param("chatId")
+
+	results, err := mc.MongoClient.FindAllMessagesByChatId(chatId)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+
 	c.JSON(http.StatusOK, gin.H{"data": results})
 }
 
