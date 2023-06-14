@@ -24,9 +24,14 @@ func (cl *MongoClient) FindAllChats() ([]models.Chat, error) {
 	return res, nil
 }
 
-func (cl *MongoClient) FindAllUserChats(userId uint) ([]models.Chat, error) {
+func (cl *MongoClient) FindAllUserChats(user models.User) ([]models.Chat, error) {
 	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
-	filter := bson.M{"assignedTo": userId}
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"assignedTo": user.Username},
+			bson.M{"participants": user.Username},
+		},
+	}
 	c, err := collection.Find(context.Background(), filter)
 	if err != nil {
 		return nil, err
@@ -39,6 +44,21 @@ func (cl *MongoClient) FindAllUserChats(userId uint) ([]models.Chat, error) {
 	c.Close(context.Background())
 
 	return res, nil
+}
+
+func (cl MongoClient) FindChatById(id string) (models.Chat, error) {
+	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
+	var output models.Chat
+	filter := bson.M{"chatId": id}
+	err := collection.FindOne(context.Background(), filter).Decode(&output)
+	return output, err
+}
+
+func (cl MongoClient) DeleteChatById(id string) error {
+	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
+	filter := bson.M{"chatId": id}
+	_, err := collection.DeleteOne(context.Background(), filter)
+	return err
 }
 
 func (cl *MongoClient) InsertChat(data *models.Chat) error {

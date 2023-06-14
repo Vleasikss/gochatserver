@@ -39,6 +39,7 @@ func main() {
 	protected.GET("/users", mc.FindAllUsers)
 	protected.POST("/chat", cc.PostChat)
 	protected.GET("/chat", cc.FindAllUserChats)
+	protected.DELETE("/chat/:chatId", cc.DeleteChat)
 
 	private := protected.Group("/admin")
 	private.GET("/user", controllers.CurrentUser)
@@ -52,7 +53,7 @@ func main() {
 func corsRules(port string) gin.HandlerFunc {
 	return cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost", "http://localhost:" + port, "http://localhost:3000"},
-		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST"},
+		AllowMethods:     []string{"PUT", "PATCH", "GET", "POST", "DELETE"},
 		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,

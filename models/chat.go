@@ -6,16 +6,16 @@ type Chat struct {
 	ChatId       string   `json:"chatId" bson:"chatId"`
 	Name         string   `json:"name" bson:"name"`
 	Participants []string `json:"participants" bson:"participants"`
-	AssignedTo   uint     `json:"assignedTo" bson:"assignedTo"`
+	AssignedTo   string   `json:"assignedTo" bson:"assignedTo"`
 }
 
-func (c Chat) ExistingChat(chatId string, name string, participants []string, assignedTo uint) *Chat {
+func (c Chat) ExistingChat(chatId string, name string, participants []string, assignedTo string) *Chat {
 	return &Chat{
 		chatId, name, participants, assignedTo,
 	}
 }
 
-func NewChat(name string, participants []string, assignedTo uint) *Chat {
+func NewChat(name string, participants []string, assignedTo string) *Chat {
 	return &Chat{
 		ChatId:       generateChatId(),
 		Name:         name,
