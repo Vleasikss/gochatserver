@@ -25,9 +25,17 @@ func NewMessageController(mongo *mongo.MongoClient, m *melody.Melody) *MessageCo
 		if err != nil {
 			fmt.Println("error during JSON parsing: " + err.Error())
 		}
+		chat, err := mongo.FindChatById(input.ChatId)
+		response := models.MessageResponse{
+			ChatId:   input.ChatId,
+			From:     input.From,
+			Payload:  input.Payload,
+			ChatName: chat.Name,
+		}
 		fmt.Printf("Inserting message: from=%s, payload=%s", input.From, input.Payload)
 		go mongo.InsertMessage(&input)
-		go m.Broadcast(msg)
+		responseJson, err := json.Marshal(response)
+		go m.Broadcast(responseJson)
 	})
 
 	return &MessageController{
