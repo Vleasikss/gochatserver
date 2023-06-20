@@ -1,46 +1,24 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
+	"gopkg.in/olahol/melody.v1"
 	"net/http"
 
 	"github.com/Vleasikss/gochatserver/models"
 	"github.com/Vleasikss/gochatserver/mongo"
 
 	"github.com/gin-gonic/gin"
-	"gopkg.in/olahol/melody.v1"
 )
 
 type MessageController struct {
-	MongoClient *mongo.MongoClient
+	MongoClient *mongo.Client
 	Melody      *melody.Melody
 }
 
-func NewMessageController(mongo *mongo.MongoClient, m *melody.Melody) *MessageController {
-
-	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		var input models.Message
-		err := json.Unmarshal(msg, &input)
-		if err != nil {
-			fmt.Println("error during JSON parsing: " + err.Error())
-		}
-		chat, err := mongo.FindChatById(input.ChatId)
-		response := models.MessageResponse{
-			ChatId:   input.ChatId,
-			From:     input.From,
-			Payload:  input.Payload,
-			ChatName: chat.Name,
-		}
-		fmt.Printf("Inserting message: from=%s, payload=%s", input.From, input.Payload)
-		go mongo.InsertMessage(&input)
-		responseJson, err := json.Marshal(response)
-		go m.Broadcast(responseJson)
-	})
-
+func NewMessageController(mongo *mongo.Client, melody *melody.Melody) *MessageController {
 	return &MessageController{
 		MongoClient: mongo,
-		Melody:      m,
+		Melody:      melody,
 	}
 }
 
@@ -63,8 +41,4 @@ func (mc *MessageController) FindAllUsers(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": results})
-}
-
-func (mc *MessageController) HandleSocketMessage(c *gin.Context) {
-	mc.Melody.HandleRequest(c.Writer, c.Request)
 }

@@ -10,7 +10,7 @@ import (
 const ChatDatabase = "test"
 const ChatCollection = "chats"
 
-func (cl *MongoClient) FindAllChats() ([]models.Chat, error) {
+func (cl *Client) FindAllChats() ([]models.Chat, error) {
 	cl.mongo.Database(MessageDatabase).CreateCollection(context.Background(), ChatCollection)
 	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
 	var res []models.Chat
@@ -24,7 +24,7 @@ func (cl *MongoClient) FindAllChats() ([]models.Chat, error) {
 	return res, nil
 }
 
-func (cl *MongoClient) FindAllUserChats(user models.User) ([]models.Chat, error) {
+func (cl *Client) FindAllUserChats(user models.User) ([]models.Chat, error) {
 	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
 	filter := bson.M{
 		"$or": bson.A{
@@ -46,7 +46,7 @@ func (cl *MongoClient) FindAllUserChats(user models.User) ([]models.Chat, error)
 	return res, nil
 }
 
-func (cl MongoClient) FindChatById(id string) (models.Chat, error) {
+func (cl Client) FindChatById(id string) (models.Chat, error) {
 	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
 	var output models.Chat
 	filter := bson.M{"chatId": id}
@@ -54,14 +54,14 @@ func (cl MongoClient) FindChatById(id string) (models.Chat, error) {
 	return output, err
 }
 
-func (cl MongoClient) DeleteChatById(id string) error {
+func (cl Client) DeleteChatById(id string) error {
 	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
 	filter := bson.M{"chatId": id}
 	_, err := collection.DeleteOne(context.Background(), filter)
 	return err
 }
 
-func (cl *MongoClient) InsertChat(data *models.Chat) error {
+func (cl *Client) InsertChat(data *models.Chat) error {
 	collection := cl.mongo.Database(ChatDatabase).Collection(ChatCollection)
 	result, err := collection.InsertOne(context.Background(), &data)
 	if err != nil {

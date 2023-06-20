@@ -10,7 +10,7 @@ import (
 const MessageDatabase = "test"
 const MessageCollection = "messages"
 
-func (cl *MongoClient) InsertMessage(data *models.Message) {
+func (cl *Client) InsertMessage(data *models.Message) {
 	collection := cl.mongo.Database("test").Collection("books")
 	result, err := collection.InsertOne(context.Background(), &data)
 	if err != nil {
@@ -19,7 +19,7 @@ func (cl *MongoClient) InsertMessage(data *models.Message) {
 	fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
 }
 
-func (cl *MongoClient) FindAllMessages() []models.Message {
+func (cl *Client) FindAllMessages() []models.Message {
 	cl.mongo.Database(MessageDatabase).CreateCollection(context.Background(), MessageCollection)
 	collection := cl.mongo.Database("test").Collection("books")
 	fmt.Println("get the collection test/books: " + collection.Name())
@@ -35,7 +35,7 @@ func (cl *MongoClient) FindAllMessages() []models.Message {
 	return res
 }
 
-func (cl *MongoClient) FindAllMessagesByChatId(chatId string) ([]models.Message, error) {
+func (cl *Client) FindAllMessagesByChatId(chatId string) ([]models.Message, error) {
 	collection := cl.mongo.Database("test").Collection("books")
 	filter := bson.M{"chatId": chatId}
 

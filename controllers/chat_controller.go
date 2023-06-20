@@ -6,16 +6,20 @@ import (
 	"github.com/Vleasikss/gochatserver/models"
 	"github.com/Vleasikss/gochatserver/mongo"
 	"github.com/gin-gonic/gin"
+	"gopkg.in/olahol/melody.v1"
+	"log"
 	"net/http"
 )
 
 type ChatController struct {
-	MongoClient *mongo.MongoClient
+	MongoClient *mongo.Client
+	Melody      *melody.Melody
 }
 
-func NewChatController(mongo *mongo.MongoClient) *ChatController {
+func NewChatController(mongo *mongo.Client, m *melody.Melody) *ChatController {
 	return &ChatController{
 		MongoClient: mongo,
+		Melody:      m,
 	}
 }
 
@@ -38,14 +42,17 @@ func (cc *ChatController) PostChat(c *gin.Context) {
 		return
 	}
 	user, _ := models.GetUserByID(userId)
+	// admin is also participant
 
 	chat := models.NewChat(input.Name, input.Participants, user.Username)
+	log.Printf("posting new for user: userId=%d, chat: %s\n", userId, chat)
 
 	err = cc.MongoClient.InsertChat(chat)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"chatId":  chat.ChatId,
 		"message": "success",
@@ -68,7 +75,6 @@ func (cc *ChatController) DeleteChat(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "successfully deleted chat by id " + input.ChatId})
 }
 
 func (cc *ChatController) FindAllUserChats(c *gin.Context) {

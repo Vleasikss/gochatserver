@@ -11,7 +11,7 @@ import (
 // Replace the placeholder with your Atlas connection string
 const uri = "mongodb://mongodb:27017"
 
-type MongoClient struct {
+type Client struct {
 	mongo *mongo.Client
 }
 
@@ -36,18 +36,18 @@ func connect() (*mongo.Client, error) {
 	return connection, nil
 }
 
-func NewMongoClient() *MongoClient {
+func NewMongoClient() *Client {
 	cl, err := connect()
 	if err != nil {
 		fmt.Println("error during mongo connection: " + err.Error())
 		return nil
 	}
-	return &MongoClient{
+	return &Client{
 		mongo: cl,
 	}
 }
 
-func (cl MongoClient) Disconnect() {
+func (cl Client) Disconnect() {
 	if err := cl.mongo.Disconnect(context.TODO()); err != nil {
 		fmt.Println("Unable to disconnect: " + err.Error())
 	}

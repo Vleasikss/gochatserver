@@ -6,9 +6,3 @@ type Message struct {
 	Payload string `json:"payload" bson:"payload"`
 	ChatId  string `json:"chatId" bson:"chatId"`
 }
-type MessageResponse struct {
-	From     string `json:"from"`
-	Payload  string `json:"payload"`
-	ChatId   string `json:"chatId"`
-	ChatName string `json:"chatName"`
-}

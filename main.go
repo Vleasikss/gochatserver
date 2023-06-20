@@ -23,7 +23,8 @@ func main() {
 	melodyClient := melody.New()
 
 	mc := controllers.NewMessageController(mongoClient, melodyClient)
-	cc := controllers.NewChatController(mongoClient)
+	cc := controllers.NewChatController(mongoClient, melodyClient)
+	msc := controllers.NewMessageSocketController(mongoClient, melodyClient)
 
 	r.Use(corsRules(port))
 	r.Use(static.Serve("/", static.LocalFile("./public", true)))
@@ -31,7 +32,7 @@ func main() {
 	public := r.Group("/api")
 	public.POST("/register", controllers.Authenticate)
 	public.POST("/login", controllers.Login)
-	public.GET("/ws", mc.HandleSocketMessage)
+	public.GET("/ws", msc.HandleSocketMessage)
 
 	protected := r.Group("/api")
 	protected.Use(jwt.AuthMiddleware())
