@@ -13,8 +13,12 @@ services:
     restart: unless-stopped
     environment:
       - port=5002
+      - HOST_IP_ADDRESS=192.168.1.2
+      - API_SECRET=secret
+      - TOKEN_HOUR_LIFESPAN=1
     depends_on: 
-      - mongodb # This service depends on mongodb. Start that first.
+      - mongodb
+      - mysqldb
 
 
   # Mongodb Service   
@@ -29,11 +33,45 @@ services:
         mode: host
     volumes:
       - ./data:/data/db
+  mysqldb:
+    image: mysql
+    container_name: mysqldb
+    restart: always
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      timeout: 5s
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: gochat
+      MYSQL_ROOT_PASSWORD: root
+  # grafana-monitor:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   restart: unless-stopped
+  #   environment:
+  #     - TERM=linux
+  #     - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-polystat-panel
+  #   ports:
+  #     - '3000:3000'
+  #   depends_on:
+  #     - mysqldb
+  #     - mongodb
+  #     - goservice1
+  #     - nginx
+  #   volumes:
+  #     - 'grafana_storage:/var/lib/grafana'
   nginx:
     build:
       context: ../gochatui/
       dockerfile: Dockerfile
+      args:
+        - REACT_APP_HOST_IP_ADDRESS=192.168.1.2
     ports:
       - "80:80"
     depends_on:
       - "goservice1"
+
+# volumes:
+#   grafana_storage: {}

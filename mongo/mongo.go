@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -12,7 +11,7 @@ import (
 // Replace the placeholder with your Atlas connection string
 const uri = "mongodb://mongodb:27017"
 
-type MongoClient[T any] struct {
+type Client struct {
 	mongo *mongo.Client
 }
 
@@ -21,7 +20,7 @@ func connect() (*mongo.Client, error) {
 	// serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 
 	fmt.Println("Connecting to database...")
-	opts := options.Client().ApplyURI("mongodb://mongodb:27017")
+	opts := options.Client().ApplyURI(uri)
 
 	// Create a new client and connect to the server
 	connection, err := mongo.Connect(context.TODO(), opts)
@@ -37,43 +36,18 @@ func connect() (*mongo.Client, error) {
 	return connection, nil
 }
 
-func NewMongoClient[T any]() *MongoClient[T] {
+func NewMongoClient() *Client {
 	cl, err := connect()
 	if err != nil {
 		fmt.Println("error during mongo connection: " + err.Error())
 		return nil
 	}
-	return &MongoClient[T]{
+	return &Client{
 		mongo: cl,
 	}
 }
 
-func (cl *MongoClient[T]) Insert(data *T) {
-	collection := cl.mongo.Database("test").Collection("books")
-	result, err := collection.InsertOne(context.Background(), &data)
-	if err != nil {
-		fmt.Println("error during insert: " + err.Error())
-	}
-	fmt.Printf("Inserted document with _id: %v\n", result.InsertedID)
-}
-
-func (cl *MongoClient[T]) FindAll() []T {
-	cl.mongo.Database("test").CreateCollection(context.TODO(), "books")
-	collection := cl.mongo.Database("test").Collection("books")
-	fmt.Println("get the collection test/books: " + collection.Name())
-	var res []T
-	filter := bson.D{}
-	cursor, err := collection.Find(context.TODO(), filter)
-	if err = cursor.All(context.TODO(), &res); err != nil {
-		fmt.Println("error during find all: " + err.Error())
-	}
-	fmt.Printf("get the data: %v\n", res)
-	cursor.Close(context.TODO())
-
-	return res
-}
-
-func (cl MongoClient[T]) Disconnect(data *T) {
+func (cl Client) Disconnect() {
 	if err := cl.mongo.Disconnect(context.TODO()); err != nil {
 		fmt.Println("Unable to disconnect: " + err.Error())
 	}
